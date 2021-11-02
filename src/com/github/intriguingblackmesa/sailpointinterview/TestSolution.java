@@ -11,39 +11,39 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/** This  tests the collating Listener by creating one thread that reads from a file containg Hamlet and 
- * sends messages consisting of lines of that file,
- * and another thread that calls a Listener's receiveMessage() in a never-ending loop.
+/**
+ * This tests the collating Listener by creating one thread that reads from a
+ * file containg Hamlet and sends messages consisting of lines of that file, and
+ * another thread that calls a Listener's receiveMessage() in a never-ending
+ * loop.
  */
 public class TestSolution {
     public static void main(String[] args) {
         LinkedBlockingQueue<Message<String>> messageQueue = new LinkedBlockingQueue<>();
         Listener<String> listener = new Listener<>(0, new PriorityQueue<>(), new FileProcessor(), messageQueue);
         MessageSender<String> sender = new MessageSender<>(messageQueue);
-        HashSet<Integer> alreadySeen = new HashSet<>();
+
+        ArrayList<Message<String>> list = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader("input_data/hamlet.txt"));) {
+            String line = br.readLine();
+            while (line != null) {
+                list.add(new Message<>(list.size(), line + "\n"));
+                line = br.readLine();
+            }
+
+            Collections.shuffle(list);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         ExecutorService executor = Executors.newFixedThreadPool(5);
+        executor.execute(() -> list.forEach(el -> sender.sendMessage(el)));
+
         executor.execute(() -> {
-            try (BufferedReader br = new BufferedReader(new FileReader("input_data/hamlet.txt"));){
-                String line = br.readLine();
-                ArrayList<Message<String>> list = new ArrayList<>();
-                while (line != null) {
-                    list.add(new Message<>(list.size(), line + "\n"));
-                    line = br.readLine();
-                }
-
-                Collections.shuffle(list);
-    
-                for (int i = 0; i < list.size(); i++) {
-                    sender.sendMessage(list.get(i));
-                }
-            } catch(IOException e) {
-                e.printStackTrace();
-            }  
+            while (true) {
+                listener.receiveMessage();
+            }
         });
-
-
-        executor.execute(() -> {while(true) {listener.receiveMessage();}});
 
         executor.shutdown();
     }
