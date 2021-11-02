@@ -12,8 +12,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * This tests the collating Listener by creating one thread that reads from a
- * file containg Hamlet and sends messages consisting of lines of that file, and
+ * This tests the collating Listener by creating one thread that sends messages
+ * consisting of out-of-order lines from a text file containg Hamlet, and
  * another thread that calls a Listener's receiveMessage() in a never-ending
  * loop.
  */
